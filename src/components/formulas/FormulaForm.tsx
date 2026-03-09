@@ -31,7 +31,7 @@ const keyMappingRowSchema = z.object({
 const conditionalConditionSchema = z.object({
   question_key: z.string(),
   operator: z.string(),
-  value_type: z.enum(["literal", "answer", "global"]).default("literal"),
+  value_type: z.enum(["literal", "answer", "global"]),
   value: z.string().optional(),
   value_question_key: z.string().optional(),
   value_constant_name: z.string().optional(),
@@ -39,7 +39,7 @@ const conditionalConditionSchema = z.object({
 
 const conditionalCaseSchema = z.object({
   conditions: z.array(conditionalConditionSchema),
-  result_type: z.enum(["literal", "answer", "global"]).default("literal"),
+  result_type: z.enum(["literal", "answer", "global"]),
   result: z.number().optional(),
   result_question_key: z.string().optional(),
   result_constant_name: z.string().optional(),

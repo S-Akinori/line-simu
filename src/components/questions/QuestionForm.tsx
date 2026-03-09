@@ -64,7 +64,7 @@ const questionFormSchema = z.object({
   options: z.array(optionSchema),
   conditions: z.array(conditionSchema),
   display_conditions: z.array(displayConditionSchema),
-  validation_type: z.enum(["none", "numeric"]).default("none"),
+  validation_type: z.enum(["none", "numeric"]),
   validation_min: z.string().optional(),
   validation_max: z.string().optional(),
 });

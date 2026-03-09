@@ -156,6 +156,8 @@ export interface FormulaVariable {
   key_mappings?: Record<string, string | KeyMappingEntry>;
   value?: number;
   formula_name?: string;
+  cases?: Record<string, unknown>[];
+  default?: number;
 }
 
 export interface Formula {
