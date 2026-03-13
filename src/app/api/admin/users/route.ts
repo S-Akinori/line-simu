@@ -61,10 +61,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 });
     }
 
-    const adminClient = createAdminClient();
-
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(".supabase.co", ".vercel.app");
-    console.log("[invite] siteUrl:", siteUrl, "| email:", email, "| role:", role);
+
+    // Log env presence (never log secret values)
+    console.log("[invite] config:", {
+      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      hasSiteUrl: !!process.env.NEXT_PUBLIC_SITE_URL,
+      resolvedSiteUrl: siteUrl,
+      redirectTo: siteUrl ? `${siteUrl}/auth/callback?type=invite` : "(none)",
+      email,
+      role,
+    });
+
+    const adminClient = createAdminClient();
 
     // Invite user via Supabase Auth (sends invitation email)
     const { data: invited, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
@@ -76,16 +86,19 @@ export async function POST(request: NextRequest) {
     );
 
     if (inviteError) {
-      console.error("[invite] inviteUserByEmail error:", {
+      console.error("[invite] inviteUserByEmail failed:", JSON.stringify({
+        name: (inviteError as any).name,
         message: inviteError.message,
         status: inviteError.status,
-        email,
-        siteUrl,
-      });
-      return NextResponse.json({ error: inviteError.message }, { status: 500 });
+        cause: (inviteError as any).cause,
+      }, null, 2));
+      return NextResponse.json(
+        { error: inviteError.message, status: inviteError.status },
+        { status: 500 }
+      );
     }
 
-    console.log("[invite] invited user_id:", invited.user.id);
+    console.log("[invite] success, user_id:", invited.user.id);
 
     // Upsert profile with role (trigger handles basic insert; ensure role is set correctly)
     const { error: upsertError } = await adminClient
@@ -99,12 +112,19 @@ export async function POST(request: NextRequest) {
       });
 
     if (upsertError) {
-      console.error("[invite] profiles upsert error:", upsertError.message);
+      console.error("[invite] profiles upsert error:", JSON.stringify({
+        message: upsertError.message,
+        code: upsertError.code,
+        details: upsertError.details,
+        hint: upsertError.hint,
+      }, null, 2));
     }
 
     return NextResponse.json({ success: true, user_id: invited.user.id });
   } catch (err) {
-    console.error("[invite] unexpected error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    console.error("[invite] unexpected error:", JSON.stringify({ message, stack }, null, 2));
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
