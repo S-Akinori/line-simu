@@ -17,6 +17,7 @@ import {
   BarChart2,
   Workflow,
   Hash,
+  HelpCircle,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -33,6 +34,7 @@ const NAV_ITEMS = [
   { href: "/sessions", label: "セッション", icon: Users },
   { href: "/notifications", label: "通知ログ", icon: Bell },
   { href: "/accounts", label: "アカウント管理", icon: UserCog },
+  { href: "/help", label: "使い方", icon: HelpCircle },
 ];
 
 export function Sidebar() {

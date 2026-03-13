@@ -14,7 +14,7 @@ export default function Home() {
         {/* Title */}
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">
-            賠償シミュレーター
+            L-Simu ラインシミュレーター
           </h1>
           <p className="text-muted-foreground">
             LINE公式アカウント向け管理パネル

@@ -34,6 +34,11 @@ const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive"> =
   abandoned: "destructive",
 };
 
+interface ChannelOption {
+  id: string;
+  name: string;
+}
+
 interface SessionRow {
   id: string;
   status: string;
@@ -45,22 +50,55 @@ interface SessionRow {
 
 export default function SessionsPage() {
   const [sessions, setSessions] = useState<SessionRow[]>([]);
+  const [channels, setChannels] = useState<ChannelOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [channelFilter, setChannelFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [totalQuestions, setTotalQuestions] = useState(0);
 
-  const fetchSessions = useCallback(async () => {
+  useEffect(() => {
     const supabase = createClient();
+    supabase
+      .from("line_channels")
+      .select("id, name")
+      .eq("is_active", true)
+      .order("name", { ascending: true })
+      .then(({ data }) => {
+        if (data) setChannels(data);
+      });
+  }, []);
+
+  const fetchSessions = useCallback(async () => {
+    setLoading(true);
+    const supabase = createClient();
+
+    // Resolve user IDs for selected channel
+    let userIdFilter: string[] | null = null;
+    if (channelFilter !== "all") {
+      const { data: users } = await supabase
+        .from("line_users")
+        .select("id")
+        .eq("line_channel_id", channelFilter);
+      userIdFilter = users?.map((u) => u.id) ?? [];
+    }
 
     let query = supabase
       .from("sessions")
       .select("id, status, started_at, completed_at, line_user:line_users(display_name)")
       .order("started_at", { ascending: false })
-      .limit(100);
+      .limit(200);
 
     if (statusFilter !== "all") {
       query = query.eq("status", statusFilter);
+    }
+    if (userIdFilter !== null) {
+      if (userIdFilter.length === 0) {
+        setSessions([]);
+        setLoading(false);
+        return;
+      }
+      query = query.in("line_user_id", userIdFilter);
     }
 
     const [sessionsResult, questionsResult] = await Promise.all([
@@ -74,7 +112,6 @@ export default function SessionsPage() {
     setTotalQuestions(questionsResult.count ?? 0);
 
     if (sessionsResult.data) {
-      // Fetch answer counts for each session
       const sessionIds = sessionsResult.data.map((s: any) => s.id);
       const { data: answers } = await supabase
         .from("answers")
@@ -96,7 +133,7 @@ export default function SessionsPage() {
       );
     }
     setLoading(false);
-  }, [statusFilter]);
+  }, [statusFilter, channelFilter]);
 
   useEffect(() => {
     fetchSessions();
@@ -118,13 +155,21 @@ export default function SessionsPage() {
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">セッション管理</h1>
 
-      <div className="flex gap-4">
-        <Input
-          placeholder="ユーザー名で検索..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
-        />
+      <div className="flex flex-wrap gap-3">
+        <Select value={channelFilter} onValueChange={setChannelFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="アカウントで絞り込み" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">すべてのアカウント</SelectItem>
+            {channels.map((ch) => (
+              <SelectItem key={ch.id} value={ch.id}>
+                {ch.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-40">
             <SelectValue />
@@ -136,6 +181,13 @@ export default function SessionsPage() {
             <SelectItem value="abandoned">離脱</SelectItem>
           </SelectContent>
         </Select>
+
+        <Input
+          placeholder="ユーザー名で検索..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
       </div>
 
       {filteredSessions.length === 0 ? (

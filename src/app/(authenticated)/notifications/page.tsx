@@ -37,6 +37,11 @@ const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive"> =
   failed: "destructive",
 };
 
+interface ChannelOption {
+  id: string;
+  name: string;
+}
+
 interface NotificationRow {
   id: string;
   notification_type: string;
@@ -49,25 +54,62 @@ interface NotificationRow {
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
+  const [channels, setChannels] = useState<ChannelOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState("all");
+  const [channelFilter, setChannelFilter] = useState("all");
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("line_channels")
+      .select("id, name")
+      .eq("is_active", true)
+      .order("name", { ascending: true })
+      .then(({ data }) => {
+        if (data) setChannels(data);
+      });
+  }, []);
 
   const fetchNotifications = useCallback(async () => {
+    setLoading(true);
     const supabase = createClient();
+
+    // Resolve user IDs for selected channel
+    let userIdFilter: string[] | null = null;
+    if (channelFilter !== "all") {
+      const { data: users } = await supabase
+        .from("line_users")
+        .select("id")
+        .eq("line_channel_id", channelFilter);
+      userIdFilter = users?.map((u) => u.id) ?? [];
+    }
+
+    if (userIdFilter !== null && userIdFilter.length === 0) {
+      setNotifications([]);
+      setLoading(false);
+      return;
+    }
+
     let query = supabase
       .from("admin_notifications")
-      .select("id, notification_type, status, sent_at, created_at, error_message, line_user:line_users(display_name)")
+      .select(
+        "id, notification_type, status, sent_at, created_at, error_message, line_user:line_users(display_name)"
+      )
       .order("created_at", { ascending: false })
       .limit(100);
 
     if (typeFilter !== "all") {
       query = query.eq("notification_type", typeFilter);
     }
+    if (userIdFilter !== null) {
+      query = query.in("line_user_id", userIdFilter);
+    }
 
     const { data } = await query;
     if (data) setNotifications(data as unknown as NotificationRow[]);
     setLoading(false);
-  }, [typeFilter]);
+  }, [typeFilter, channelFilter]);
 
   useEffect(() => {
     fetchNotifications();
@@ -81,17 +123,33 @@ export default function NotificationsPage() {
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">通知ログ</h1>
 
-      <Select value={typeFilter} onValueChange={setTypeFilter}>
-        <SelectTrigger className="w-48">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">すべて</SelectItem>
-          <SelectItem value="session_completed">セッション完了</SelectItem>
-          <SelectItem value="session_abandoned">セッション離脱</SelectItem>
-          <SelectItem value="user_inactive">非アクティブ</SelectItem>
-        </SelectContent>
-      </Select>
+      <div className="flex flex-wrap gap-3">
+        <Select value={channelFilter} onValueChange={setChannelFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="アカウントで絞り込み" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">すべてのアカウント</SelectItem>
+            {channels.map((ch) => (
+              <SelectItem key={ch.id} value={ch.id}>
+                {ch.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">すべてのタイプ</SelectItem>
+            <SelectItem value="session_completed">セッション完了</SelectItem>
+            <SelectItem value="session_abandoned">セッション離脱</SelectItem>
+            <SelectItem value="user_inactive">非アクティブ</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       {notifications.length === 0 ? (
         <p className="text-muted-foreground">通知がありません。</p>

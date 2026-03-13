@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "交通事故賠償シミュレーター - 管理画面",
-  description: "LINE交通事故賠償シミュレーター管理パネル",
+  title: "L-Simu ラインシミュレーター - 管理画面",
+  description: "L-Simu ラインシミュレーター 管理パネル",
 };
 
 export default function RootLayout({
