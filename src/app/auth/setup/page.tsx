@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,18 @@ import {
 } from "@/components/ui/card";
 
 export default function SetupPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-muted/40">
+        <p className="text-sm text-muted-foreground">読み込み中...</p>
+      </div>
+    }>
+      <SetupForm />
+    </Suspense>
+  );
+}
+
+function SetupForm() {
   const searchParams = useSearchParams();
   const [sessionReady, setSessionReady] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
