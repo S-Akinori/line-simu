@@ -12,6 +12,8 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get("type") ?? "";
   const next = searchParams.get("next") ?? "/dashboard";
 
+  console.log("[callback] params:", { code: !!code, token_hash: !!token_hash, type, next, url: request.url });
+
   const supabase = await createClient();
 
   if (code) {

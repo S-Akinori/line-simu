@@ -31,7 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { LineChannel } from "@/types/database";
-import { UserPlus, Pencil, PowerOff, Network } from "lucide-react";
+import { UserPlus, Pencil, PowerOff, Network, Trash2 } from "lucide-react";
 
 type UserRole = "super_admin" | "admin" | "viewer";
 
@@ -66,6 +66,8 @@ export default function AccountsPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [editUser, setEditUser] = useState<AdminUser | null>(null);
   const [channelUser, setChannelUser] = useState<AdminUser | null>(null);
+  const [deleteUser, setDeleteUser] = useState<AdminUser | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [selectedChannelIds, setSelectedChannelIds] = useState<string[]>([]);
   const [savingChannels, setSavingChannels] = useState(false);
 
@@ -140,6 +142,22 @@ export default function AccountsPage() {
       body: isActive ? undefined : JSON.stringify({ is_active: true }),
     });
     await fetchUsers();
+  }
+
+  async function handleDelete() {
+    if (!deleteUser) return;
+    setDeleting(true);
+    const res = await fetch(`/api/admin/users/${deleteUser.id}?permanent=true`, {
+      method: "DELETE",
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      alert(`エラー: ${data.error}`);
+    } else {
+      setDeleteUser(null);
+      await fetchUsers();
+    }
+    setDeleting(false);
   }
 
   function openChannelDialog(user: AdminUser) {
@@ -261,6 +279,33 @@ export default function AccountsPage() {
                   <SelectItem value="viewer">閲覧者</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={!!deleteUser} onOpenChange={(open) => !open && setDeleteUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>アカウントを完全削除</DialogTitle>
+          </DialogHeader>
+          {deleteUser && (
+            <div className="space-y-4">
+              <p className="text-sm">
+                <span className="font-medium">{deleteUser.display_name ?? deleteUser.email}</span> を完全に削除します。
+              </p>
+              <p className="text-sm text-destructive">
+                この操作は元に戻せません。ログイン情報・設定データがすべて削除されます。
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setDeleteUser(null)}>
+                  キャンセル
+                </Button>
+                <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+                  {deleting ? "削除中..." : "完全削除"}
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
@@ -393,6 +438,14 @@ export default function AccountsPage() {
                         >
                           <PowerOff className="h-3 w-3 mr-1" />
                           {u.is_active ? "無効化" : "有効化"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => setDeleteUser(u)}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          削除
                         </Button>
                       </div>
                     </TableCell>
