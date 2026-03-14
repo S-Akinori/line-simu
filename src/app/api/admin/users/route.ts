@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       email,
       {
         data: { role, display_name: display_name ?? "" },
-        redirectTo: `${siteUrl}/auth/callback?type=invite`,
+        redirectTo: `${siteUrl}/auth/setup`,
       }
     );
 

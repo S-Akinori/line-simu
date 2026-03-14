@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,12 +15,67 @@ import {
 } from "@/components/ui/card";
 
 export default function SetupPage() {
+  const searchParams = useSearchParams();
+  const [sessionReady, setSessionReady] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
+
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  // Initialize session from invite link tokens
+  useEffect(() => {
+    const supabase = createClient();
+    const tokenHash = searchParams.get("token_hash");
+    const type = searchParams.get("type");
+
+    async function initSession() {
+      // Pattern A (new Supabase OTP): token_hash in URL query params
+      if (tokenHash && type === "invite") {
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: "invite",
+        });
+        if (error) {
+          setInitError(error.message);
+        } else {
+          setSessionReady(true);
+        }
+        return;
+      }
+
+      // Pattern B (implicit flow): access_token in URL hash — Supabase client
+      // picks it up automatically. Check immediately then wait for auth change.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setSessionReady(true);
+        return;
+      }
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+        if (session) {
+          setSessionReady(true);
+          subscription.unsubscribe();
+        }
+      });
+
+      // Timeout after 8 seconds
+      const timer = setTimeout(() => {
+        subscription.unsubscribe();
+        setInitError("招待リンクが無効か期限切れです。管理者に再送を依頼してください。");
+      }, 8000);
+
+      return () => {
+        clearTimeout(timer);
+        subscription.unsubscribe();
+      };
+    }
+
+    initSession();
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,9 +103,7 @@ export default function SetupPage() {
 
     // Save display name to profile
     if (displayName.trim()) {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await supabase
           .from("profiles")
@@ -73,44 +126,50 @@ export default function SetupPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="display-name">表示名（任意）</Label>
-              <Input
-                id="display-name"
-                type="text"
-                placeholder="山田 太郎"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">パスワード</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="8文字以上"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirm">パスワード（確認）</Label>
-              <Input
-                id="confirm"
-                type="password"
-                placeholder="もう一度入力してください"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                required
-              />
-            </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "設定中..." : "アカウントを有効化"}
-            </Button>
-          </form>
+          {initError ? (
+            <p className="text-sm text-destructive">{initError}</p>
+          ) : !sessionReady ? (
+            <p className="text-sm text-muted-foreground">認証情報を確認しています...</p>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="display-name">表示名（任意）</Label>
+                <Input
+                  id="display-name"
+                  type="text"
+                  placeholder="山田 太郎"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">パスワード</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="8文字以上"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm">パスワード（確認）</Label>
+                <Input
+                  id="confirm"
+                  type="password"
+                  placeholder="もう一度入力してください"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  required
+                />
+              </div>
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "設定中..." : "アカウントを有効化"}
+              </Button>
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>
