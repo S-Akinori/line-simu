@@ -61,15 +61,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 });
     }
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(".supabase.co", ".vercel.app");
+    // Derive site URL: env var > request origin > Vercel URL
+    const reqOrigin = new URL(request.url).origin;
+    const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? vercelUrl ?? reqOrigin;
 
-    // Log env presence (never log secret values)
     console.log("[invite] config:", {
-      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
       hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-      hasSiteUrl: !!process.env.NEXT_PUBLIC_SITE_URL,
-      resolvedSiteUrl: siteUrl,
-      redirectTo: siteUrl ? `${siteUrl}/auth/callback?type=invite` : "(none)",
+      siteUrl,
+      redirectTo: `${siteUrl}/auth/callback?type=invite`,
       email,
       role,
     });
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       email,
       {
         data: { role, display_name: display_name ?? "" },
-        redirectTo: siteUrl ? `${siteUrl}/auth/callback?type=invite` : undefined,
+        redirectTo: `${siteUrl}/auth/callback?type=invite`,
       }
     );
 
