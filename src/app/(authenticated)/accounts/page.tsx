@@ -41,6 +41,7 @@ interface AdminUser {
   display_name: string | null;
   role: UserRole;
   is_active: boolean;
+  line_notify_user_id: string | null;
   created_at: string;
   channel_ids: string[];
 }
@@ -70,6 +71,9 @@ export default function AccountsPage() {
   const [deleting, setDeleting] = useState(false);
   const [selectedChannelIds, setSelectedChannelIds] = useState<string[]>([]);
   const [savingChannels, setSavingChannels] = useState(false);
+  const [lineNotifyUser, setLineNotifyUser] = useState<AdminUser | null>(null);
+  const [lineNotifyInput, setLineNotifyInput] = useState("");
+  const [savingLineNotify, setSavingLineNotify] = useState(false);
 
   // Invite form
   const [inviteEmail, setInviteEmail] = useState("");
@@ -94,7 +98,7 @@ export default function AccountsPage() {
     const supabase = createClient();
     const { data } = await supabase
       .from("line_channels")
-      .select("id, name, channel_id, webhook_path, is_active, created_at, updated_at, channel_secret, channel_access_token, admin_line_group_id")
+      .select("id, name, channel_id, webhook_path, is_active, created_at, updated_at, channel_secret, channel_access_token")
       .order("name", { ascending: true });
     if (data) setChannels(data as LineChannel[]);
   }
@@ -182,6 +186,24 @@ export default function AccountsPage() {
     setSelectedChannelIds((prev) =>
       prev.includes(channelId) ? prev.filter((id) => id !== channelId) : [...prev, channelId]
     );
+  }
+
+  function openLineNotifyDialog(user: AdminUser) {
+    setLineNotifyUser(user);
+    setLineNotifyInput(user.line_notify_user_id ?? "");
+  }
+
+  async function handleSaveLineNotify() {
+    if (!lineNotifyUser) return;
+    setSavingLineNotify(true);
+    await fetch(`/api/admin/users/${lineNotifyUser.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ line_notify_user_id: lineNotifyInput }),
+    });
+    setSavingLineNotify(false);
+    setLineNotifyUser(null);
+    await fetchUsers();
   }
 
   if (error) {
@@ -304,6 +326,41 @@ export default function AccountsPage() {
                 </Button>
                 <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
                   {deleting ? "削除中..." : "完全削除"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* LINE notify user ID dialog */}
+      <Dialog open={!!lineNotifyUser} onOpenChange={(open) => !open && setLineNotifyUser(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>LINE通知設定</DialogTitle>
+          </DialogHeader>
+          {lineNotifyUser && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">{lineNotifyUser.email}</p>
+              <div className="space-y-2">
+                <Label htmlFor="line-notify-id">LINE ユーザーID</Label>
+                <Input
+                  id="line-notify-id"
+                  value={lineNotifyInput}
+                  onChange={(e) => setLineNotifyInput(e.target.value)}
+                  placeholder="Uxxxxxxxxxxxx"
+                />
+                <p className="text-xs text-muted-foreground">
+                  シミュレーション完了などの通知を受け取るLINEユーザーIDを設定します。
+                  該当のLINE公式アカウントを友だち追加している必要があります。
+                </p>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setLineNotifyUser(null)}>
+                  キャンセル
+                </Button>
+                <Button onClick={handleSaveLineNotify} disabled={savingLineNotify}>
+                  {savingLineNotify ? "保存中..." : "保存"}
                 </Button>
               </div>
             </div>

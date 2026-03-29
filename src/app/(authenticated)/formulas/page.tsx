@@ -14,35 +14,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import { useChannel } from "@/contexts/channel-context";
 
 export default function FormulasPage() {
-  const [channels, setChannels] = useState<{id: string; name: string}[]>([]);
-  const [selectedChannelId, setSelectedChannelId] = useState<string>("");
+  const { selectedChannelId } = useChannel();
   const [formulas, setFormulas] = useState<Formula[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase
-      .from("line_channels")
-      .select("id, name")
-      .eq("is_active", true)
-      .order("created_at", { ascending: true })
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          setChannels(data);
-          setSelectedChannelId(data[0].id);
-        }
-      });
-  }, []);
 
   const fetchFormulas = useCallback(async () => {
     if (!selectedChannelId) {
@@ -79,19 +57,7 @@ export default function FormulasPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold">計算式管理</h1>
-          <Select value={selectedChannelId} onValueChange={setSelectedChannelId}>
-            <SelectTrigger className="w-56">
-              <SelectValue placeholder="アカウントを選択" />
-            </SelectTrigger>
-            <SelectContent>
-              {channels.map((ch) => (
-                <SelectItem key={ch.id} value={ch.id}>{ch.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <h1 className="text-2xl font-bold">計算式管理</h1>
         <Link href={`/formulas/new?channel=${selectedChannelId}`}>
           <Button>
             <Plus className="mr-2 h-4 w-4" />

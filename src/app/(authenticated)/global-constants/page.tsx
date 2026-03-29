@@ -29,17 +29,22 @@ const EMPTY_FORM = { name: "", value: "", description: "", is_active: true };
 export default function GlobalConstantsPage() {
   const [constants, setConstants] = useState<GlobalConstant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<GlobalConstant | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
 
   const fetchConstants = useCallback(async () => {
     const supabase = createClient();
-    const { data } = await supabase
-      .from("global_constants")
-      .select("*")
-      .order("name", { ascending: true });
+    const [{ data }, { data: profile }] = await Promise.all([
+      supabase.from("global_constants").select("*").order("name", { ascending: true }),
+      supabase.auth.getUser().then(async ({ data: { user } }) => {
+        if (!user) return { data: null };
+        return supabase.from("profiles").select("role").eq("id", user.id).single();
+      }),
+    ]);
     if (data) setConstants(data as GlobalConstant[]);
+    if (profile?.role === "super_admin") setIsSuperAdmin(true);
     setLoading(false);
   }, []);
 
@@ -114,10 +119,12 @@ export default function GlobalConstantsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">グローバル定数</h1>
-        <Button onClick={openCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          新規定数
-        </Button>
+        {isSuperAdmin && (
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            新規定数
+          </Button>
+        )}
       </div>
 
       <div className="rounded-md border bg-muted/40 p-4 text-sm space-y-2">
@@ -197,7 +204,7 @@ export default function GlobalConstantsPage() {
               <TableHead>値</TableHead>
               <TableHead>説明</TableHead>
               <TableHead className="w-20">有効</TableHead>
-              <TableHead className="w-20">操作</TableHead>
+              {isSuperAdmin && <TableHead className="w-20">操作</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -213,27 +220,30 @@ export default function GlobalConstantsPage() {
                 <TableCell>
                   <Switch
                     checked={c.is_active}
-                    onCheckedChange={() => toggleActive(c)}
+                    onCheckedChange={() => isSuperAdmin && toggleActive(c)}
+                    disabled={!isSuperAdmin}
                   />
                 </TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openEdit(c)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(c.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </TableCell>
+                {isSuperAdmin && (
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEdit(c)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(c.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>

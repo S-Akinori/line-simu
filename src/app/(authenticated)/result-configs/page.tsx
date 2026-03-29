@@ -19,8 +19,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import { useChannel } from "@/contexts/channel-context";
 
-interface Channel { id: string; name: string; }
 interface RouteOption { id: string; name: string; }
 interface QuestionOption { id: string; question_key: string; content: string; }
 interface ResultConfig {
@@ -66,8 +66,7 @@ type FormState = typeof EMPTY_FORM;
 const EMPTY_RULE: ConditionRule = { question_key: "", operator: "eq", value: "" };
 
 export default function ResultConfigsPage() {
-  const [channels, setChannels] = useState<Channel[]>([]);
-  const [selectedChannelId, setSelectedChannelId] = useState<string>("");
+  const { selectedChannelId } = useChannel();
   const [configs, setConfigs] = useState<ResultConfig[]>([]);
   const [routes, setRoutes] = useState<RouteOption[]>([]);
   const [questions, setQuestions] = useState<QuestionOption[]>([]);
@@ -78,11 +77,6 @@ export default function ResultConfigsPage() {
   const [conditionGroups, setConditionGroups] = useState<ConditionGroup[]>([]);
   const [saving, setSaving] = useState(false);
   const supabase = createClient();
-
-  useEffect(() => {
-    supabase.from("line_channels").select("id, name").eq("is_active", true).order("created_at")
-      .then(({ data }) => setChannels(data ?? []));
-  }, []);
 
   useEffect(() => {
     if (!selectedChannelId) { setConfigs([]); setRoutes([]); setQuestions([]); return; }
@@ -210,18 +204,6 @@ export default function ResultConfigsPage() {
         </Button>
       </div>
 
-      <div className="w-64">
-        <Select value={selectedChannelId} onValueChange={setSelectedChannelId}>
-          <SelectTrigger>
-            <SelectValue placeholder="チャンネルを選択..." />
-          </SelectTrigger>
-          <SelectContent>
-            {channels.map((ch) => (
-              <SelectItem key={ch.id} value={ch.id}>{ch.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
 
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && setDialogOpen(false)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

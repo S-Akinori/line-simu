@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { useChannel } from "@/contexts/channel-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -34,11 +35,6 @@ const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive"> =
   abandoned: "destructive",
 };
 
-interface ChannelOption {
-  id: string;
-  name: string;
-}
-
 interface SessionRow {
   id: string;
   status: string;
@@ -49,25 +45,20 @@ interface SessionRow {
 }
 
 export default function SessionsPage() {
+  const { channels, selectedChannelId } = useChannel();
   const [sessions, setSessions] = useState<SessionRow[]>([]);
-  const [channels, setChannels] = useState<ChannelOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
   const [channelFilter, setChannelFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [totalQuestions, setTotalQuestions] = useState(0);
 
+  // グローバル選択が確定したら初回のみフィルタに反映
   useEffect(() => {
-    const supabase = createClient();
-    supabase
-      .from("line_channels")
-      .select("id, name")
-      .eq("is_active", true)
-      .order("name", { ascending: true })
-      .then(({ data }) => {
-        if (data) setChannels(data);
-      });
-  }, []);
+    if (selectedChannelId && channelFilter === "all") {
+      setChannelFilter(selectedChannelId);
+    }
+  }, [selectedChannelId]);
 
   const fetchSessions = useCallback(async () => {
     setLoading(true);

@@ -7,14 +7,8 @@ import type { Question } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Plus, GripVertical, Pencil, Trash2, Shield } from "lucide-react";
+import { useChannel } from "@/contexts/channel-context";
 import {
   DndContext,
   closestCenter,
@@ -129,8 +123,7 @@ function SortableRow({
 }
 
 export default function QuestionsPage() {
-  const [channels, setChannels] = useState<{id: string; name: string}[]>([]);
-  const [selectedChannelId, setSelectedChannelId] = useState<string>("");
+  const { selectedChannelId } = useChannel();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -140,21 +133,6 @@ export default function QuestionsPage() {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase
-      .from("line_channels")
-      .select("id, name")
-      .eq("is_active", true)
-      .order("created_at", { ascending: true })
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          setChannels(data);
-          setSelectedChannelId(data[0].id);
-        }
-      });
-  }, []);
 
   const fetchQuestions = useCallback(async () => {
     if (!selectedChannelId) {
@@ -235,19 +213,7 @@ export default function QuestionsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold">質問管理</h1>
-          <Select value={selectedChannelId} onValueChange={setSelectedChannelId}>
-            <SelectTrigger className="w-56">
-              <SelectValue placeholder="アカウントを選択" />
-            </SelectTrigger>
-            <SelectContent>
-              {channels.map((ch) => (
-                <SelectItem key={ch.id} value={ch.id}>{ch.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <h1 className="text-2xl font-bold">質問管理</h1>
         <Link href={`/questions/new?channel=${selectedChannelId}`}>
           <Button>
             <Plus className="mr-2 h-4 w-4" />

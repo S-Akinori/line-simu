@@ -10,6 +10,9 @@ import {
   BarChart3,
   CheckCircle2,
   ChevronRight,
+  Scale,
+  Building2,
+  HeartPulse,
 } from "lucide-react";
 
 const FEATURES = [
@@ -29,7 +32,7 @@ const FEATURES = [
     icon: Calculator,
     title: "自動計算・結果表示",
     description:
-      "回答に基づいて慰謝料・賠償金を自動算出。計算式も管理画面から編集でき、法改正や判例変更にも素早く対応できます。",
+      "回答に基づいて金額・スコア・診断結果を自動算出。計算式も管理画面から編集でき、変更にも素早く対応できます。",
   },
   {
     icon: GitBranch,
@@ -67,7 +70,31 @@ const STEPS = [
     step: "03",
     title: "結果を自動送信",
     description:
-      "全問回答後、慰謝料・賠償金の概算をLINEメッセージで自動通知します。",
+      "全問回答後、シミュレーション結果をLINEメッセージで自動通知します。",
+  },
+];
+
+const USE_CASES = [
+  {
+    icon: Scale,
+    industry: "法律・法務",
+    title: "交通事故慰謝料シミュレーター",
+    description:
+      "事故状況・怪我の程度・入通院日数などを質問し、慰謝料・賠償金の概算を自動算出。初回相談前の情報収集を自動化できます。",
+  },
+  {
+    icon: Building2,
+    industry: "不動産・住宅",
+    title: "住宅ローン借入可能額診断",
+    description:
+      "年収・勤続年数・希望返済期間を入力するだけで借入可能額の目安を提示。資料請求や来店予約への誘導にも活用できます。",
+  },
+  {
+    icon: HeartPulse,
+    industry: "医療・健康",
+    title: "症状チェック・受診案内",
+    description:
+      "症状や体の状態を質問し、受診すべき診療科や緊急度をガイド。患者の不安を和らげ、適切な受診行動を促します。",
   },
 ];
 
@@ -89,12 +116,6 @@ export default function Home() {
                 ログイン
               </Button>
             </Link>
-            <Link href="/register">
-              <Button size="sm">
-                無料で始める
-                <ChevronRight className="ml-1 h-3 w-3" />
-              </Button>
-            </Link>
           </div>
         </div>
       </header>
@@ -104,28 +125,23 @@ export default function Home() {
         <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 px-4 text-center">
           <Badge variant="secondary" className="gap-1.5 px-3 py-1">
             <MessageCircle className="h-3 w-3" />
-            LINE Chatbot × 慰謝料計算
+            LINE チャットボット × 自動計算
           </Badge>
           <h1 className="text-4xl font-bold leading-tight tracking-tight md:text-5xl">
-            LINEで簡単に
+            LINEで動く
             <br />
-            <span className="text-primary">交通事故慰謝料</span>を
+            <span className="text-primary">対話型シミュレーター</span>を
             <br />
-            シミュレーション
+            ノーコードで構築
           </h1>
           <p className="max-w-xl text-lg text-muted-foreground">
-            質問に答えるだけで慰謝料の概算を自動計算。複雑な計算式・条件分岐を
-            ノーコードで管理できる、法律事務所・相談センター向けサービスです。
+            質問フロー・条件分岐・計算式を管理画面から設定するだけ。
+            業種を問わず、あらゆる診断・見積もり・試算をLINE上で自動化できます。
           </p>
           <div className="flex flex-wrap justify-center gap-3">
-            <Link href="/register">
-              <Button size="lg" className="px-8">
-                管理画面を無料登録
-              </Button>
-            </Link>
             <Link href="/login">
-              <Button size="lg" variant="outline" className="px-8">
-                ログイン
+              <Button size="lg" className="px-8">
+                管理画面へログイン
               </Button>
             </Link>
           </div>
@@ -162,8 +178,43 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How it works */}
+      {/* Use Cases */}
       <section className="border-y bg-muted/30 py-20">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-bold tracking-tight">利用例</h2>
+            <p className="mt-3 text-muted-foreground">
+              さまざまな業種・用途で活用できます
+            </p>
+          </div>
+          <div className="grid gap-6 md:grid-cols-3">
+            {USE_CASES.map((u) => {
+              const Icon = u.icon;
+              return (
+                <Card key={u.title} className="border-border/60">
+                  <CardContent className="flex flex-col gap-3 p-6">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {u.industry}
+                      </Badge>
+                    </div>
+                    <h3 className="font-semibold">{u.title}</h3>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {u.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="py-20">
         <div className="mx-auto max-w-4xl px-4">
           <div className="mb-12 text-center">
             <h2 className="text-3xl font-bold tracking-tight">使い方</h2>
@@ -191,26 +242,20 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      <section className="py-20">
+      <section className="border-t bg-muted/30 py-20">
         <div className="mx-auto max-w-xl px-4 text-center">
           <h2 className="mb-4 text-3xl font-bold tracking-tight">
             まずは管理画面を試してみる
           </h2>
           <p className="mb-8 text-muted-foreground">
-            アカウント登録後すぐに質問フローや計算式の設定を始められます。
+            ログイン後すぐに質問フローや計算式の設定を始められます。
           </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Link href="/register">
-              <Button size="lg" className="px-10">
-                無料で始める
-              </Button>
-            </Link>
-            <Link href="/login">
-              <Button size="lg" variant="outline" className="px-10">
-                ログイン
-              </Button>
-            </Link>
-          </div>
+          <Link href="/login">
+            <Button size="lg" className="px-10">
+              ログイン
+              <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </Link>
         </div>
       </section>
 

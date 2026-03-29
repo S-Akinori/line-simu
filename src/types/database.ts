@@ -9,7 +9,6 @@ export interface LineChannel {
   channel_id: string;
   channel_secret: string;
   channel_access_token: string;
-  admin_line_group_id: string | null;
   webhook_path: string;
   is_active: boolean;
   created_at: string;
@@ -22,6 +21,7 @@ export interface Profile {
   display_name: string | null;
   role: UserRole;
   is_active: boolean;
+  line_notify_user_id: string | null;
   created_at: string;
 }
 
@@ -162,6 +162,7 @@ export interface FormulaVariable {
 
 export interface Formula {
   id: string;
+  line_channel_id: string | null;
   name: string;
   description: string | null;
   expression: string;

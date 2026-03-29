@@ -21,9 +21,32 @@ export async function GET() {
   }
 
   const adminClient = createAdminClient();
+
+  if (profile.role === "super_admin") {
+    // super_admin sees all channels
+    const { data: channels, error } = await adminClient
+      .from("line_channels")
+      .select("id, name, webhook_path, is_active, created_at, updated_at")
+      .order("created_at", { ascending: true });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ channels });
+  }
+
+  // admin / viewer: only assigned channels
+  const { data: assigned, error: assignError } = await adminClient
+    .from("profile_channels")
+    .select("channel_id")
+    .eq("profile_id", user.id);
+
+  if (assignError) return NextResponse.json({ error: assignError.message }, { status: 500 });
+
+  const channelIds = (assigned ?? []).map((r) => r.channel_id);
+  if (channelIds.length === 0) return NextResponse.json({ channels: [] });
+
   const { data: channels, error } = await adminClient
     .from("line_channels")
     .select("id, name, webhook_path, is_active, created_at, updated_at")
+    .in("id", channelIds)
     .order("created_at", { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -49,7 +72,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { name, channel_id, channel_secret, channel_access_token, admin_line_group_id, gas_webhook_url, webhook_path, start_keywords } =
+  const { name, channel_id, channel_secret, channel_access_token, gas_webhook_url, webhook_path, start_keywords } =
     await request.json();
 
   if (!name || !channel_id || !channel_secret || !channel_access_token || !webhook_path) {
@@ -70,7 +93,6 @@ export async function POST(request: NextRequest) {
       channel_id,
       channel_secret,
       channel_access_token,
-      admin_line_group_id: admin_line_group_id ?? null,
       gas_webhook_url: gas_webhook_url ?? null,
       webhook_path,
       start_keywords: Array.isArray(start_keywords) && start_keywords.length > 0

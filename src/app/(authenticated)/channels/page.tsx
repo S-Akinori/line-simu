@@ -170,7 +170,6 @@ interface ChannelFull extends ChannelListItem {
   channel_id: string;
   channel_secret: string;
   channel_access_token: string;
-  admin_line_group_id: string | null;
   gas_webhook_url: string | null;
   start_keywords: string[];
   keyword_routes: KeywordRoute[];
@@ -185,7 +184,6 @@ const EMPTY_FORM: FormState = {
   channel_id: "",
   channel_secret: "",
   channel_access_token: "",
-  admin_line_group_id: "",
   gas_webhook_url: "",
   webhook_path: "",
   keyword_routes: [{ keyword: "慰謝料計算をする", route_id: null }],
@@ -273,7 +271,6 @@ export default function ChannelsPage() {
       channel_id: c.channel_id,
       channel_secret: c.channel_secret,
       channel_access_token: c.channel_access_token,
-      admin_line_group_id: c.admin_line_group_id ?? "",
       gas_webhook_url: c.gas_webhook_url ?? "",
       webhook_path: c.webhook_path,
       keyword_routes: keywordRoutes.length > 0
@@ -298,7 +295,6 @@ export default function ChannelsPage() {
       channel_id: form.channel_id,
       channel_secret: form.channel_secret,
       channel_access_token: form.channel_access_token,
-      admin_line_group_id: form.admin_line_group_id || null,
       gas_webhook_url: form.gas_webhook_url || null,
       webhook_path: form.webhook_path,
       start_keywords,
@@ -584,21 +580,6 @@ export default function ChannelsPage() {
                   {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="ch-group-id">管理者グループID（任意）</Label>
-              <Input
-                id="ch-group-id"
-                value={form.admin_line_group_id ?? ""}
-                onChange={(e) =>
-                  setForm({ ...form, admin_line_group_id: e.target.value })
-                }
-                placeholder="Cxxxxxxxxxxxx"
-              />
-              <p className="text-xs text-muted-foreground">
-                シミュレーション完了通知を受け取るLINEグループのID
-              </p>
             </div>
 
             <div className="space-y-2">

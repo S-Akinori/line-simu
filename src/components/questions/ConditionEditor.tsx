@@ -134,7 +134,8 @@ export function ConditionEditor({
                 <SelectContent>
                   {allQuestions.map((q) => (
                     <SelectItem key={q.id} value={q.question_key}>
-                      {q.question_key} - {q.content.substring(0, 30)}
+                      <span className="font-mono">{q.question_key}</span>
+                      <span className="ml-2 text-muted-foreground">{q.content.substring(0, 24)}</span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -255,7 +256,10 @@ function DisplayConditionRules({
               <SelectTrigger><SelectValue placeholder="質問を選択..." /></SelectTrigger>
               <SelectContent>
                 {allQuestions.map((q) => (
-                  <SelectItem key={q.id} value={q.question_key}>{q.question_key}</SelectItem>
+                  <SelectItem key={q.id} value={q.question_key}>
+                    <span className="font-mono">{q.question_key}</span>
+                    <span className="ml-2 text-muted-foreground">{q.content.substring(0, 24)}</span>
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -349,7 +353,8 @@ function ConditionRules({
               <SelectContent>
                 {allQuestions.map((q) => (
                   <SelectItem key={q.id} value={q.question_key}>
-                    {q.question_key}
+                    <span className="font-mono">{q.question_key}</span>
+                    <span className="ml-2 text-muted-foreground">{q.content.substring(0, 24)}</span>
                   </SelectItem>
                 ))}
               </SelectContent>

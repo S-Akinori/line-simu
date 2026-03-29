@@ -2,21 +2,22 @@ import { createClient } from "@/lib/supabase/server";
 import { FormulaForm } from "@/components/formulas/FormulaForm";
 import type { Question, Formula } from "@/types/database";
 
-export default async function NewFormulaPage() {
+export default async function NewFormulaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ channel?: string }>;
+}) {
+  const { channel } = await searchParams;
   const supabase = await createClient();
 
-  const [questionsResult, formulasResult, lookupResult, constantsResult] = await Promise.all([
-    supabase
-      .from("questions")
-      .select("*")
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("formulas")
-      .select("*")
-      .order("display_order", { ascending: true }),
-    supabase.from("lookup_tables").select("table_name"),
-    supabase.from("global_constants").select("name, description").eq("is_active", true).order("name"),
-  ]);
+  const [questionsResult, formulasResult, lookupResult, constantsResult, channelsResult] =
+    await Promise.all([
+      supabase.from("questions").select("*").order("sort_order", { ascending: true }),
+      supabase.from("formulas").select("*").order("display_order", { ascending: true }),
+      supabase.from("lookup_tables").select("table_name, description"),
+      supabase.from("global_constants").select("name, description").eq("is_active", true).order("name"),
+      supabase.from("line_channels").select("id, name").eq("is_active", true).order("name"),
+    ]);
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
@@ -26,6 +27,8 @@ export default async function NewFormulaPage() {
         allFormulas={(formulasResult.data as Formula[]) ?? []}
         allLookupTables={lookupResult.data ?? []}
         allGlobalConstants={constantsResult.data ?? []}
+        channels={channelsResult.data ?? []}
+        initialChannelId={channel ?? ""}
       />
     </div>
   );

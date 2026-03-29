@@ -40,6 +40,7 @@ export async function PATCH(
   }
   if (body.display_name !== undefined) updates.display_name = body.display_name;
   if (body.is_active !== undefined) updates.is_active = body.is_active;
+  if (body.line_notify_user_id !== undefined) updates.line_notify_user_id = body.line_notify_user_id || null;
 
   const adminClient = createAdminClient();
   const { error: updateError } = await adminClient

@@ -142,6 +142,11 @@ export function QuestionForm({ question, allQuestions = [], channels = [] }: Que
   const showOptions = watchType === "image_carousel" || watchType === "button";
   const maxOptions = watchType === "button" ? 4 : 10;
 
+  const selectedChannelId = form.watch("line_channel_id");
+  const channelQuestions = allQuestions.filter(
+    (q) => q.line_channel_id === selectedChannelId
+  );
+
   async function onSubmit(values: QuestionFormValues) {
     const supabase = createClient();
 
@@ -494,7 +499,7 @@ export function QuestionForm({ question, allQuestions = [], channels = [] }: Que
             register={form.register}
             watch={form.watch}
             setValue={form.setValue}
-            allQuestions={allQuestions}
+            allQuestions={channelQuestions}
           />
         </CardContent>
       </Card>
@@ -509,7 +514,7 @@ export function QuestionForm({ question, allQuestions = [], channels = [] }: Que
             register={form.register}
             watch={form.watch}
             setValue={form.setValue}
-            allQuestions={allQuestions}
+            allQuestions={channelQuestions}
           />
         </CardContent>
       </Card>

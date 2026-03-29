@@ -63,7 +63,6 @@ export async function PATCH(
     "channel_id",
     "channel_secret",
     "channel_access_token",
-    "admin_line_group_id",
     "gas_webhook_url",
     "webhook_path",
     "start_keywords",

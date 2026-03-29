@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { StepDeliveryConfig, LineChannel } from "@/types/database";
+import { useChannel } from "@/contexts/channel-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -71,28 +72,12 @@ const EMPTY_FORM: FormState = {
 };
 
 export default function DeliveryPage() {
+  const { channels, selectedChannelId } = useChannel();
   const [configs, setConfigs] = useState<StepDeliveryConfig[]>([]);
-  const [channels, setChannels] = useState<Pick<LineChannel, "id" | "name">[]>([]);
-  const [selectedChannelId, setSelectedChannelId] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase
-      .from("line_channels")
-      .select("id, name")
-      .eq("is_active", true)
-      .order("created_at", { ascending: true })
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          setChannels(data as Pick<LineChannel, "id" | "name">[]);
-          setSelectedChannelId(data[0].id);
-        }
-      });
-  }, []);
 
   const fetchConfigs = useCallback(async () => {
     if (!selectedChannelId) {
@@ -117,7 +102,7 @@ export default function DeliveryPage() {
 
   function openCreate() {
     setEditId(null);
-    setForm(EMPTY_FORM);
+    setForm({ ...EMPTY_FORM, line_channel_id: selectedChannelId });
     setDialogOpen(true);
   }
 
@@ -210,19 +195,7 @@ export default function DeliveryPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold">ステップ配信設定</h1>
-          <Select value={selectedChannelId} onValueChange={setSelectedChannelId}>
-            <SelectTrigger className="w-56">
-              <SelectValue placeholder="アカウントを選択" />
-            </SelectTrigger>
-            <SelectContent>
-              {channels.map((ch) => (
-                <SelectItem key={ch.id} value={ch.id}>{ch.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <h1 className="text-2xl font-bold">ステップ配信設定</h1>
         <Button onClick={openCreate}>
           <Plus className="mr-2 h-4 w-4" />
           新規設定

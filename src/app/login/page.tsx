@@ -92,12 +92,6 @@ function LoginForm() {
               >
                 パスワードを忘れた場合
               </Link>
-              <Link
-                href="/register"
-                className="text-sm text-muted-foreground hover:text-foreground"
-              >
-                アカウントを登録する
-              </Link>
             </div>
           </form>
         </CardContent>

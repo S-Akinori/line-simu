@@ -3,14 +3,8 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { LineChannel, Route, RouteConnection } from "@/types/database";
+import type { Route, RouteConnection } from "@/types/database";
+import { useChannel } from "@/contexts/channel-context";
 
 const RouteFlowCanvas = dynamic(
   () =>
@@ -28,26 +22,11 @@ const RouteFlowCanvas = dynamic(
 );
 
 export default function FlowPage() {
-  const [channels, setChannels] = useState<LineChannel[]>([]);
-  const [selectedChannelId, setSelectedChannelId] = useState<string>("");
+  const { selectedChannelId } = useChannel();
   const [routes, setRoutes] = useState<Route[]>([]);
   const [connections, setConnections] = useState<RouteConnection[]>([]);
   const [questionCounts, setQuestionCounts] = useState<Record<string, number>>({});
-  const [loadingChannels, setLoadingChannels] = useState(true);
   const [loadingRoutes, setLoadingRoutes] = useState(false);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase
-      .from("line_channels")
-      .select("*")
-      .eq("is_active", true)
-      .order("name")
-      .then(({ data }) => {
-        if (data) setChannels(data as LineChannel[]);
-        setLoadingChannels(false);
-      });
-  }, []);
 
   useEffect(() => {
     if (!selectedChannelId) {
@@ -104,26 +83,6 @@ export default function FlowPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">フロービュー</h1>
-        <Select
-          value={selectedChannelId}
-          onValueChange={setSelectedChannelId}
-          disabled={loadingChannels}
-        >
-          <SelectTrigger className="w-64">
-            <SelectValue
-              placeholder={
-                loadingChannels ? "読み込み中..." : "チャンネルを選択"
-              }
-            />
-          </SelectTrigger>
-          <SelectContent>
-            {channels.map((ch) => (
-              <SelectItem key={ch.id} value={ch.id}>
-                {ch.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       {!selectedChannelId ? (
