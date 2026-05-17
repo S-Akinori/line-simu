@@ -11,14 +11,13 @@ export default async function EditFormulaPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [formulaResult, questionsResult, formulasResult, lookupResult, constantsResult, channelsResult] =
+  const [formulaResult, questionsResult, formulasResult, lookupResult, constantsResult] =
     await Promise.all([
       supabase.from("formulas").select("*").eq("id", id).single(),
       supabase.from("questions").select("*").order("sort_order", { ascending: true }),
       supabase.from("formulas").select("*").order("display_order", { ascending: true }),
       supabase.from("lookup_tables").select("table_name, description"),
       supabase.from("global_constants").select("name, description").eq("is_active", true).order("name"),
-      supabase.from("line_channels").select("id, name").eq("is_active", true).order("name"),
     ]);
 
   if (!formulaResult.data) {
@@ -36,8 +35,6 @@ export default async function EditFormulaPage({
         allFormulas={(formulasResult.data as Formula[]) ?? []}
         allLookupTables={lookupResult.data ?? []}
         allGlobalConstants={constantsResult.data ?? []}
-        channels={channelsResult.data ?? []}
-        initialChannelId={formula.line_channel_id ?? ""}
       />
     </div>
   );

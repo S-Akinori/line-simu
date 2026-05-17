@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { StepDeliveryConfig, LineChannel } from "@/types/database";
+import type { StepDeliveryConfig } from "@/types/database";
 import { useChannel } from "@/contexts/channel-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +50,6 @@ function displayDaysToHours(days: string): number {
 }
 
 type FormState = {
-  line_channel_id: string;
   name: string;
   trigger: string;
   delay_hours: string;   // hours for non-registration; ignored for registration_delay
@@ -61,7 +60,6 @@ type FormState = {
 };
 
 const EMPTY_FORM: FormState = {
-  line_channel_id: "",
   name: "",
   trigger: "inactivity",
   delay_hours: "24",
@@ -102,14 +100,13 @@ export default function DeliveryPage() {
 
   function openCreate() {
     setEditId(null);
-    setForm({ ...EMPTY_FORM, line_channel_id: selectedChannelId });
+    setForm({ ...EMPTY_FORM });
     setDialogOpen(true);
   }
 
   function openEdit(config: StepDeliveryConfig) {
     setEditId(config.id);
     setForm({
-      line_channel_id: config.line_channel_id ?? "",
       name: config.name,
       trigger: config.trigger,
       delay_hours: String(config.delay_hours),
@@ -128,7 +125,7 @@ export default function DeliveryPage() {
     const supabase = createClient();
     const isRegistration = form.trigger === "registration_delay";
     const payload = {
-      line_channel_id: form.line_channel_id || null,
+      line_channel_id: selectedChannelId || null,
       name: form.name,
       trigger: form.trigger,
       delay_hours: isRegistration
@@ -183,10 +180,7 @@ export default function DeliveryPage() {
   }
 
   const isRegistration = form.trigger === "registration_delay";
-  const canSave =
-    !!form.name &&
-    !!form.message_template &&
-    (!isRegistration || !!form.line_channel_id);
+  const canSave = !!form.name && !!form.message_template;
 
   if (loading) {
     return <p className="text-muted-foreground">読み込み中...</p>;
@@ -306,26 +300,6 @@ export default function DeliveryPage() {
 
             {isRegistration ? (
               <>
-                <div className="space-y-2">
-                  <Label>対象チャンネル</Label>
-                  <Select
-                    value={form.line_channel_id}
-                    onValueChange={(v) =>
-                      setForm((prev) => ({ ...prev, line_channel_id: v }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="チャンネルを選択" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {channels.map((ch) => (
-                        <SelectItem key={ch.id} value={ch.id}>
-                          {ch.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
                 <div className="space-y-2">
                   <Label>登録からの日数</Label>
                   <div className="flex items-center gap-2">

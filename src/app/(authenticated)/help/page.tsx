@@ -132,17 +132,18 @@ export default function HelpPage() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm leading-7">
             <p>
-              本システムは、LINE チャットボットを通じて交通事故の慰謝料・賠償額をシミュレーションする仕組みを提供します。
+              本システムは、LINEを通じて金額シミュレーションする仕組みを提供します。
               管理画面では、以下の要素を設定することでシミュレーションの内容を自由にカスタマイズできます。
             </p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {[
-                { label: "LINEアカウント", desc: "チャンネル設定・Webhook" },
+                { label: "LINEアカウント", desc: "チャンネルの一般設定" },
                 { label: "質問管理", desc: "ユーザーへの質問と選択肢" },
                 { label: "ルート管理", desc: "質問の順序と条件分岐" },
                 { label: "計算式", desc: "数値計算ロジック" },
                 { label: "ルックアップ", desc: "表引きテーブル" },
                 { label: "結果表示設定", desc: "結果メッセージのフォーマット" },
+                { label: "ステップ配信", desc: "友達登録から定期的に送るメッセージ" },
               ].map((item) => (
                 <div key={item.label} className="rounded-lg border p-3">
                   <div className="font-medium text-xs">{item.label}</div>
@@ -198,11 +199,11 @@ export default function HelpPage() {
             </div>
             <FieldTable
               rows={[
-                { field: "チャンネル名", desc: "管理画面上の識別名（任意）", required: true },
+                { field: "チャンネル名", desc: "管理画面上の識別名（任意）。※公式ライン名と一致させることを推奨します。", required: true },
                 { field: "チャンネルID", desc: "LINE Developers Console の Basic settings にある数字 ID", required: true },
                 { field: "チャンネルシークレット", desc: "Webhook 署名検証に使用するシークレットキー", required: true },
                 { field: "アクセストークン", desc: "メッセージ送信に使用するトークン（長期トークン推奨）", required: true },
-                { field: "管理グループID", desc: "通知を送る LINE グループの ID（任意）" },
+                { field: "スプレッドシート連携URL", desc: "デプロイしたGASアプリのURL" },
               ]}
             />
           </CardContent>
@@ -222,11 +223,18 @@ export default function HelpPage() {
                 { field: "質問キー", desc: "計算式・条件から参照するユニーク識別子（英数字・アンダースコア）", required: true },
                 { field: "質問文", desc: "ユーザーに送信するメッセージ本文", required: true },
                 { field: "質問タイプ", desc: "text（自由入力）/ button（ボタン選択）/ image_carousel（画像付き選択）", required: true },
-                { field: "チャンネル", desc: "この質問が属するチャンネル", required: true },
-                { field: "数値入力", desc: "ON にするとユーザーの入力を数値として保存（計算に使用する場合は ON）" },
-                { field: "選択肢", desc: "button / image_carousel タイプの場合に設定（ラベル・値・画像URL）" },
-                { field: "表示条件", desc: "特定の回答があった場合のみこの質問を送信する条件（任意）" },
-                { field: "エラーメッセージ", desc: "選択肢ごとに設定可。設定すると回答を保存せず同じ質問を再送信する" },
+                { field: "質問画像", desc: "ボタンテンプレートのサムネイルとして表示されます。" },
+                { field: "説明", desc: "質問の簡易的な説明です。ユーザーには表示されません。" },
+                { field: "グループ名", desc: "質問をカテゴリーで整理したい場合に入れてください。" },
+              ]}
+            />
+            <p>以下ボタンまたはカルーセルを選んだ場合の選択肢の項目についてです。</p>
+            <FieldTable
+              rows={[
+                { field: "ラベル", desc: "選択肢として表示されるテキスト", required: true },
+                { field: "値", desc: "実際に保存される値", required: true},
+                { field: "画像（カルーセルの場合）", desc: "カルーセルで表示する画像", required: true},
+                { field: "エラーメッセージ", desc: "その選択肢が選ばれた場合の例外メッセージ。"},
               ]}
             />
             <Note>
@@ -244,35 +252,24 @@ export default function HelpPage() {
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
             <p>
-              質問を送る順序（フロー）を定義します。各ルートはチャンネルに紐づき、質問のリストと条件分岐を設定します。
+              質問を送る順序（フロー）を定義します。質問のリストと条件分岐を設定します。
             </p>
             <FieldTable
               rows={[
-                { field: "ルート名", desc: "管理画面上の識別名", required: true },
-                { field: "チャンネル", desc: "このルートが属するチャンネル", required: true },
-                { field: "質問リスト", desc: "送信する質問を順番に並べたリスト（ドラッグで並べ替え可）", required: true },
-                { field: "表示条件", desc: "質問ごとに「この質問を表示する条件」を設定可能。条件を満たさない質問はスキップされる" },
+                { field: "名前", desc: "管理画面上の識別名", required: true },
+                { field: "表示順", desc: "管理画面で表示される順番" },
+                { field: "説明", desc: "ルートの説明"},
+                { field: "質問リスト", desc: "送信する質問を順番に並べたリスト（ドラッグで並べ替え可）。リストの上から順番に質問が表示されます。", required: true },
                 { field: "次ルートへの条件", desc: "特定の回答があった場合に別ルートへ分岐する設定（任意）" },
               ]}
             />
-            <div className="space-y-2">
-              <p className="font-medium">条件設定の書き方</p>
-              <div className="rounded-md bg-muted p-3 font-mono text-xs space-y-1">
-                <p>{"{ \"question_key\": \"injury_type\", \"operator\": \"eq\", \"value\": \"death\" }"}</p>
-                <p className="text-muted-foreground">// injury_type の回答が「death」と等しい場合</p>
-              </div>
-              <p className="text-muted-foreground">
-                演算子: <code>eq</code>（等しい）/ <code>neq</code>（等しくない）/ <code>gt</code>（より大きい）/{" "}
-                <code>gte</code>（以上）/ <code>lt</code>（未満）/ <code>lte</code>（以下）
-              </p>
-            </div>
           </CardContent>
         </Card>
 
         {/* Flow View */}
         <Card>
           <CardHeader>
-            <SectionHeader icon={Workflow} title="フロービュー" href="/flow" />
+            <SectionHeader icon={Workflow} title="フロービュー（β版）" href="/flow" />
           </CardHeader>
           <CardContent className="text-sm space-y-2">
             <p>

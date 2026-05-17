@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import type { Route, RouteQuestion, RouteConnection, Question, LineChannel, DisplayConditionGroup, ConditionRule } from "@/types/database";
+import type { Route, RouteQuestion, RouteConnection, Question, DisplayConditionGroup, ConditionRule } from "@/types/database";
+import { useChannel } from "@/contexts/channel-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -83,17 +84,16 @@ interface RouteFormProps {
   route?: Route & { route_questions?: RouteQuestion[]; route_connections?: RouteConnection[] };
   allQuestions: Question[];
   allRoutes: Route[];
-  allChannels: Pick<LineChannel, "id" | "name">[];
 }
 
-export function RouteForm({ route, allQuestions, allRoutes, allChannels }: RouteFormProps) {
+export function RouteForm({ route, allQuestions, allRoutes }: RouteFormProps) {
   const router = useRouter();
+  const { selectedChannelId } = useChannel();
   const isEdit = !!route;
 
   const [name, setName] = useState(route?.name ?? "");
   const [description, setDescription] = useState(route?.description ?? "");
   const [sortOrder, setSortOrder] = useState(route?.sort_order ?? 0);
-  const [channelId, setChannelId] = useState(route?.channel_id ?? "");
   const [saving, setSaving] = useState(false);
 
   // Question list
@@ -204,7 +204,6 @@ export function RouteForm({ route, allQuestions, allRoutes, allChannels }: Route
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) { alert("名前は必須です"); return; }
-    if (!channelId) { alert("チャンネルを選択してください"); return; }
     setSaving(true);
     const supabase = createClient();
 
@@ -220,7 +219,7 @@ export function RouteForm({ route, allQuestions, allRoutes, allChannels }: Route
       } else {
         const { data, error } = await supabase
           .from("routes")
-          .insert({ name, description: description || null, sort_order: sortOrder, channel_id: channelId })
+          .insert({ name, description: description || null, sort_order: sortOrder, channel_id: selectedChannelId })
           .select("id")
           .single();
         if (error || !data) { alert("作成に失敗しました: " + error?.message); setSaving(false); return; }
@@ -256,9 +255,9 @@ export function RouteForm({ route, allQuestions, allRoutes, allChannels }: Route
     }
   }
 
-  const channelQuestions = allQuestions.filter((q) => !channelId || q.line_channel_id === channelId);
+  const channelQuestions = allQuestions.filter((q) => !selectedChannelId || q.line_channel_id === selectedChannelId);
   const availableQuestions = channelQuestions.filter((q) => !qItems.some((i) => i.question_id === q.id));
-  const otherRoutes = allRoutes.filter((r) => r.id !== route?.id && (!channelId || r.channel_id === channelId));
+  const otherRoutes = allRoutes.filter((r) => r.id !== route?.id && (!selectedChannelId || r.channel_id === selectedChannelId));
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
@@ -276,24 +275,9 @@ export function RouteForm({ route, allQuestions, allRoutes, allChannels }: Route
               <Input type="number" min={0} value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>LINEチャンネル *</Label>
-              <Select value={channelId} onValueChange={setChannelId} disabled={isEdit}>
-                <SelectTrigger>
-                  <SelectValue placeholder="チャンネルを選択..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {allChannels.map((ch) => (
-                    <SelectItem key={ch.id} value={ch.id}>{ch.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>説明</Label>
-              <Input placeholder="ルートの説明..." value={description} onChange={(e) => setDescription(e.target.value)} />
-            </div>
+          <div className="space-y-2">
+            <Label>説明</Label>
+            <Input placeholder="ルートの説明..." value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
         </CardContent>
       </Card>

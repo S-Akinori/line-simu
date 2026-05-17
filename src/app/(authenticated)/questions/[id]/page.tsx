@@ -11,7 +11,7 @@ export default async function EditQuestionPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [questionResult, optionsResult, allQuestionsResult, channelsResult] =
+  const [questionResult, optionsResult, allQuestionsResult] =
     await Promise.all([
       supabase.from("questions").select("*").eq("id", id).single(),
       supabase
@@ -23,11 +23,6 @@ export default async function EditQuestionPage({
         .from("questions")
         .select("*")
         .order("sort_order", { ascending: true }),
-      supabase
-        .from("line_channels")
-        .select("id, name")
-        .eq("is_active", true)
-        .order("name"),
     ]);
 
   if (!questionResult.data) {
@@ -45,7 +40,6 @@ export default async function EditQuestionPage({
       <QuestionForm
         question={question}
         allQuestions={(allQuestionsResult.data as Question[]) ?? []}
-        channels={channelsResult.data ?? []}
       />
     </div>
   );

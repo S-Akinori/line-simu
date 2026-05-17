@@ -22,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { Plus, Trash2 } from "lucide-react";
 import { ConditionEditor, DisplayConditionEditor } from "./ConditionEditor";
+import { useChannel } from "@/contexts/channel-context";
 
 const optionSchema = z.object({
   label: z.string().min(1, "ラベルは必須です"),
@@ -50,7 +51,6 @@ const displayConditionSchema = z.object({
 });
 
 const questionFormSchema = z.object({
-  line_channel_id: z.string().min(1, "チャンネルは必須です"),
   image_url: z.string().optional(),
   question_key: z
     .string()
@@ -71,25 +71,19 @@ const questionFormSchema = z.object({
 
 type QuestionFormValues = z.infer<typeof questionFormSchema>;
 
-interface Channel {
-  id: string;
-  name: string;
-}
-
 interface QuestionFormProps {
   question?: Question & { question_options?: QuestionOption[] };
   allQuestions?: Question[];
-  channels?: Channel[];
 }
 
-export function QuestionForm({ question, allQuestions = [], channels = [] }: QuestionFormProps) {
+export function QuestionForm({ question, allQuestions = [] }: QuestionFormProps) {
   const router = useRouter();
+  const { selectedChannelId } = useChannel();
   const isEdit = !!question;
 
   const form = useForm<QuestionFormValues>({
     resolver: zodResolver(questionFormSchema),
     defaultValues: {
-      line_channel_id: question?.line_channel_id ?? "",
       image_url: question?.image_url ?? "",
       question_key: question?.question_key ?? "",
       question_type: question?.question_type ?? "button",
@@ -142,7 +136,6 @@ export function QuestionForm({ question, allQuestions = [], channels = [] }: Que
   const showOptions = watchType === "image_carousel" || watchType === "button";
   const maxOptions = watchType === "button" ? 4 : 10;
 
-  const selectedChannelId = form.watch("line_channel_id");
   const channelQuestions = allQuestions.filter(
     (q) => q.line_channel_id === selectedChannelId
   );
@@ -158,7 +151,7 @@ export function QuestionForm({ question, allQuestions = [], channels = [] }: Que
     }
 
     const questionData = {
-      line_channel_id: values.line_channel_id,
+      line_channel_id: selectedChannelId,
       image_url: values.image_url || null,
       question_key: values.question_key,
       question_type: values.question_type,
@@ -247,29 +240,6 @@ export function QuestionForm({ question, allQuestions = [], channels = [] }: Que
           <CardTitle>基本情報</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="line_channel_id">LINEチャンネル</Label>
-            <Select
-              value={form.watch("line_channel_id")}
-              onValueChange={(v) => form.setValue("line_channel_id", v)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="チャンネルを選択..." />
-              </SelectTrigger>
-              <SelectContent>
-                {channels.map((ch) => (
-                  <SelectItem key={ch.id} value={ch.id}>
-                    {ch.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {form.formState.errors.line_channel_id && (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.line_channel_id.message}
-              </p>
-            )}
-          </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="question_key">質問キー</Label>

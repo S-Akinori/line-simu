@@ -21,6 +21,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Trash2 } from "lucide-react";
 import { DisplayConditionEditor } from "@/components/questions/ConditionEditor";
+import { useChannel } from "@/contexts/channel-context";
 
 const keyMappingRowSchema = z.object({
   lookup_key: z.string(),
@@ -69,7 +70,6 @@ const displayConditionSchema = z.object({
 });
 
 const formulaFormSchema = z.object({
-  line_channel_id: z.string().min(1, "チャンネルは必須です"),
   name: z
     .string()
     .min(1, "名前は必須です")
@@ -91,19 +91,12 @@ type FormulaFormValues = z.infer<typeof formulaFormSchema>;
 
 type ConditionGroup = { rules: { question_key: string; operator: string; value?: string }[]; logic: "and" | "or" };
 
-interface Channel {
-  id: string;
-  name: string;
-}
-
 interface FormulaFormProps {
   formula?: Formula;
   allQuestions?: Question[];
   allFormulas?: Formula[];
   allLookupTables?: { table_name: string; description?: string | null }[];
   allGlobalConstants?: Pick<GlobalConstant, "name" | "description">[];
-  channels?: Channel[];
-  initialChannelId?: string;
 }
 
 function variablesToFormValues(
@@ -218,16 +211,14 @@ export function FormulaForm({
   allFormulas = [],
   allLookupTables = [],
   allGlobalConstants = [],
-  channels = [],
-  initialChannelId = "",
 }: FormulaFormProps) {
   const router = useRouter();
+  const { selectedChannelId } = useChannel();
   const isEdit = !!formula;
 
   const form = useForm<FormulaFormValues>({
     resolver: zodResolver(formulaFormSchema),
     defaultValues: {
-      line_channel_id: formula?.line_channel_id ?? initialChannelId,
       name: formula?.name ?? "",
       description: formula?.description ?? "",
       expression: formula?.expression ?? "",
@@ -252,7 +243,6 @@ export function FormulaForm({
     remove: removeVar,
   } = useFieldArray({ control: form.control, name: "variables" });
 
-  const selectedChannelId = form.watch("line_channel_id");
   const channelQuestions = allQuestions.filter(
     (q) => q.line_channel_id === selectedChannelId
   );
@@ -264,7 +254,7 @@ export function FormulaForm({
     const supabase = createClient();
 
     const formulaData = {
-      line_channel_id: values.line_channel_id,
+      line_channel_id: selectedChannelId,
       name: values.name,
       description: values.description || null,
       expression: values.expression,
@@ -307,29 +297,6 @@ export function FormulaForm({
           <CardTitle>基本情報</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>LINEチャンネル</Label>
-            <Select
-              value={form.watch("line_channel_id")}
-              onValueChange={(v) => form.setValue("line_channel_id", v)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="チャンネルを選択..." />
-              </SelectTrigger>
-              <SelectContent>
-                {channels.map((ch) => (
-                  <SelectItem key={ch.id} value={ch.id}>
-                    {ch.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {form.formState.errors.line_channel_id && (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.line_channel_id.message}
-              </p>
-            )}
-          </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>名前</Label>
