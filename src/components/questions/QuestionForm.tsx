@@ -22,7 +22,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { Plus, Trash2 } from "lucide-react";
 import { ConditionEditor, DisplayConditionEditor } from "./ConditionEditor";
-import { useChannel } from "@/contexts/channel-context";
 
 const optionSchema = z.object({
   label: z.string().min(1, "ラベルは必須です"),
@@ -72,13 +71,13 @@ const questionFormSchema = z.object({
 type QuestionFormValues = z.infer<typeof questionFormSchema>;
 
 interface QuestionFormProps {
+  channelId: string;
   question?: Question & { question_options?: QuestionOption[] };
   allQuestions?: Question[];
 }
 
-export function QuestionForm({ question, allQuestions = [] }: QuestionFormProps) {
+export function QuestionForm({ channelId, question, allQuestions = [] }: QuestionFormProps) {
   const router = useRouter();
-  const { selectedChannelId } = useChannel();
   const isEdit = !!question;
 
   const form = useForm<QuestionFormValues>({
@@ -137,7 +136,7 @@ export function QuestionForm({ question, allQuestions = [] }: QuestionFormProps)
   const maxOptions = watchType === "button" ? 4 : 10;
 
   const channelQuestions = allQuestions.filter(
-    (q) => q.line_channel_id === selectedChannelId
+    (q) => q.line_channel_id === channelId
   );
 
   async function onSubmit(values: QuestionFormValues) {
@@ -151,7 +150,7 @@ export function QuestionForm({ question, allQuestions = [] }: QuestionFormProps)
     }
 
     const questionData = {
-      line_channel_id: selectedChannelId,
+      line_channel_id: channelId,
       image_url: values.image_url || null,
       question_key: values.question_key,
       question_type: values.question_type,
@@ -229,7 +228,7 @@ export function QuestionForm({ question, allQuestions = [] }: QuestionFormProps)
       }
     }
 
-    router.push("/questions");
+    router.push(`/channels/${channelId}?tab=questions`);
     router.refresh();
   }
 
@@ -500,7 +499,7 @@ export function QuestionForm({ question, allQuestions = [] }: QuestionFormProps)
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push("/questions")}
+          onClick={() => router.push(`/channels/${channelId}?tab=questions`)}
         >
           キャンセル
         </Button>

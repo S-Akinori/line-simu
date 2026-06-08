@@ -108,7 +108,7 @@ export default function Home() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <MessageCircle className="h-4 w-4" />
             </div>
-            <span className="font-bold tracking-tight">L-Simu</span>
+            <span className="font-bold tracking-tight">ラインシミュレーター</span>
           </div>
           <div className="flex items-center gap-2">
             <Link href="/login">
@@ -178,7 +178,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Use Cases */}
+      {/* Use Cases
       <section className="border-y bg-muted/30 py-20">
         <div className="mx-auto max-w-6xl px-4">
           <div className="mb-12 text-center">
@@ -211,7 +211,7 @@ export default function Home() {
             })}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* How it works */}
       <section className="py-20">
@@ -267,10 +267,10 @@ export default function Home() {
               <MessageCircle className="h-3 w-3" />
             </div>
             <span className="font-medium text-foreground">
-              L-Simu ラインシミュレーター
+              ラインシミュレーター
             </span>
           </div>
-          <span>© {new Date().getFullYear()} L-Simu. All rights reserved.</span>
+          <span>© {new Date().getFullYear()} ラインシミュレーター. All rights reserved.</span>
         </div>
       </footer>
     </div>

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Route, RouteQuestion, RouteConnection, Question, DisplayConditionGroup, ConditionRule } from "@/types/database";
-import { useChannel } from "@/contexts/channel-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,14 +80,14 @@ function SortableQRow({
 }
 
 interface RouteFormProps {
+  channelId: string;
   route?: Route & { route_questions?: RouteQuestion[]; route_connections?: RouteConnection[] };
   allQuestions: Question[];
   allRoutes: Route[];
 }
 
-export function RouteForm({ route, allQuestions, allRoutes }: RouteFormProps) {
+export function RouteForm({ channelId, route, allQuestions, allRoutes }: RouteFormProps) {
   const router = useRouter();
-  const { selectedChannelId } = useChannel();
   const isEdit = !!route;
 
   const [name, setName] = useState(route?.name ?? "");
@@ -219,7 +218,7 @@ export function RouteForm({ route, allQuestions, allRoutes }: RouteFormProps) {
       } else {
         const { data, error } = await supabase
           .from("routes")
-          .insert({ name, description: description || null, sort_order: sortOrder, channel_id: selectedChannelId })
+          .insert({ name, description: description || null, sort_order: sortOrder, channel_id: channelId })
           .select("id")
           .single();
         if (error || !data) { alert("作成に失敗しました: " + error?.message); setSaving(false); return; }
@@ -246,7 +245,7 @@ export function RouteForm({ route, allQuestions, allRoutes }: RouteFormProps) {
         );
       }
 
-      router.push("/routes");
+      router.push(`/channels/${channelId}?tab=routes`);
       router.refresh();
     } catch {
       alert("保存中にエラーが発生しました");
@@ -255,9 +254,9 @@ export function RouteForm({ route, allQuestions, allRoutes }: RouteFormProps) {
     }
   }
 
-  const channelQuestions = allQuestions.filter((q) => !selectedChannelId || q.line_channel_id === selectedChannelId);
+  const channelQuestions = allQuestions.filter((q) => !channelId || q.line_channel_id === channelId);
   const availableQuestions = channelQuestions.filter((q) => !qItems.some((i) => i.question_id === q.id));
-  const otherRoutes = allRoutes.filter((r) => r.id !== route?.id && (!selectedChannelId || r.channel_id === selectedChannelId));
+  const otherRoutes = allRoutes.filter((r) => r.id !== route?.id && (!channelId || r.channel_id === channelId));
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
@@ -435,7 +434,7 @@ export function RouteForm({ route, allQuestions, allRoutes }: RouteFormProps) {
 
       <div className="flex gap-2">
         <Button type="submit" disabled={saving}>{saving ? "保存中..." : isEdit ? "更新" : "作成"}</Button>
-        <Button type="button" variant="outline" onClick={() => router.push("/routes")}>キャンセル</Button>
+        <Button type="button" variant="outline" onClick={() => router.push(`/channels/${channelId}?tab=routes`)}>キャンセル</Button>
       </div>
     </form>
   );

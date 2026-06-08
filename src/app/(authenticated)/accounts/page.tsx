@@ -31,7 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { LineChannel } from "@/types/database";
-import { UserPlus, Pencil, PowerOff, Network, Trash2 } from "lucide-react";
+import { UserPlus, Pencil, PowerOff, Network, Trash2, KeyRound } from "lucide-react";
 
 type UserRole = "super_admin" | "admin" | "viewer";
 
@@ -74,6 +74,7 @@ export default function AccountsPage() {
   const [lineNotifyUser, setLineNotifyUser] = useState<AdminUser | null>(null);
   const [lineNotifyInput, setLineNotifyInput] = useState("");
   const [savingLineNotify, setSavingLineNotify] = useState(false);
+  const [sendingReset, setSendingReset] = useState<string | null>(null);
 
   // Invite form
   const [inviteEmail, setInviteEmail] = useState("");
@@ -191,6 +192,19 @@ export default function AccountsPage() {
   function openLineNotifyDialog(user: AdminUser) {
     setLineNotifyUser(user);
     setLineNotifyInput(user.line_notify_user_id ?? "");
+  }
+
+  async function handleSendResetEmail(user: AdminUser) {
+    if (!confirm(`${user.display_name ?? user.email} にパスワードリセットメールを送信しますか？`)) return;
+    setSendingReset(user.id);
+    const res = await fetch(`/api/admin/users/${user.id}/reset-password`, { method: "POST" });
+    if (!res.ok) {
+      const data = await res.json();
+      alert(`エラー: ${data.error}`);
+    } else {
+      alert("パスワードリセットメールを送信しました。");
+    }
+    setSendingReset(null);
   }
 
   async function handleSaveLineNotify() {
@@ -488,6 +502,15 @@ export default function AccountsPage() {
                             チャンネル
                           </Button>
                         )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleSendResetEmail(u)}
+                          disabled={sendingReset === u.id}
+                        >
+                          <KeyRound className="h-3 w-3 mr-1" />
+                          {sendingReset === u.id ? "送信中..." : "PW再設定"}
+                        </Button>
                         <Button
                           size="sm"
                           variant={u.is_active ? "destructive" : "outline"}

@@ -21,7 +21,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Trash2 } from "lucide-react";
 import { DisplayConditionEditor } from "@/components/questions/ConditionEditor";
-import { useChannel } from "@/contexts/channel-context";
 
 const keyMappingRowSchema = z.object({
   lookup_key: z.string(),
@@ -92,6 +91,7 @@ type FormulaFormValues = z.infer<typeof formulaFormSchema>;
 type ConditionGroup = { rules: { question_key: string; operator: string; value?: string }[]; logic: "and" | "or" };
 
 interface FormulaFormProps {
+  channelId: string;
   formula?: Formula;
   allQuestions?: Question[];
   allFormulas?: Formula[];
@@ -206,6 +206,7 @@ function formValuesToVariables(
 }
 
 export function FormulaForm({
+  channelId,
   formula,
   allQuestions = [],
   allFormulas = [],
@@ -213,7 +214,6 @@ export function FormulaForm({
   allGlobalConstants = [],
 }: FormulaFormProps) {
   const router = useRouter();
-  const { selectedChannelId } = useChannel();
   const isEdit = !!formula;
 
   const form = useForm<FormulaFormValues>({
@@ -244,17 +244,17 @@ export function FormulaForm({
   } = useFieldArray({ control: form.control, name: "variables" });
 
   const channelQuestions = allQuestions.filter(
-    (q) => q.line_channel_id === selectedChannelId
+    (q) => q.line_channel_id === channelId
   );
   const channelFormulas = allFormulas.filter(
-    (f) => f.line_channel_id === selectedChannelId
+    (f) => f.line_channel_id === channelId
   );
 
   async function onSubmit(values: FormulaFormValues) {
     const supabase = createClient();
 
     const formulaData = {
-      line_channel_id: selectedChannelId,
+      line_channel_id: channelId,
       name: values.name,
       description: values.description || null,
       expression: values.expression,
@@ -286,7 +286,7 @@ export function FormulaForm({
       }
     }
 
-    router.push("/formulas");
+    router.push(`/channels/${channelId}?tab=formulas`);
     router.refresh();
   }
 
@@ -938,7 +938,7 @@ export function FormulaForm({
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push("/formulas")}
+          onClick={() => router.push(`/channels/${channelId}?tab=formulas`)}
         >
           キャンセル
         </Button>

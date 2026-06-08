@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { GlobalConstant } from "@/types/database";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 const EMPTY_FORM = { name: "", value: "", description: "", is_active: true };
 
 export default function GlobalConstantsPage() {
+  const router = useRouter();
   const [constants, setConstants] = useState<GlobalConstant[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -43,10 +45,14 @@ export default function GlobalConstantsPage() {
         return supabase.from("profiles").select("role").eq("id", user.id).single();
       }),
     ]);
+    if (profile?.role !== "super_admin") {
+      router.replace("/dashboard");
+      return;
+    }
     if (data) setConstants(data as GlobalConstant[]);
-    if (profile?.role === "super_admin") setIsSuperAdmin(true);
+    setIsSuperAdmin(true);
     setLoading(false);
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     fetchConstants();

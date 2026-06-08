@@ -28,8 +28,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Eye, EyeOff, Copy, Trash2, Code2 } from "lucide-react";
+import Link from "next/link";
+import { Plus, Pencil, Eye, EyeOff, Copy, Trash2, Code2, Settings2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useChannel } from "@/contexts/channel-context";
 
 const GAS_CODE = `/**
  * LINE シミュレーター - 回答データ スプレッドシート同期
@@ -192,6 +194,9 @@ const EMPTY_FORM: FormState = {
 };
 
 export default function ChannelsPage() {
+  const { currentUserRole } = useChannel();
+  const isSuperAdmin = currentUserRole === "super_admin";
+
   const [channels, setChannels] = useState<ChannelListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -251,7 +256,7 @@ export default function ChannelsPage() {
     setShowToken(false);
     const res = await fetch(`/api/channels/${channel.id}`);
     if (!res.ok) {
-      alert("チャンネル情報の取得に失敗しました（スーパー管理者権限が必要です）");
+      alert("チャンネル情報の取得に失敗しました。権限を確認してください。");
       return;
     }
     const data = await res.json();
@@ -438,10 +443,12 @@ export default function ChannelsPage() {
             <Code2 className="mr-2 h-4 w-4" />
             GASコード
           </Button>
-          <Button onClick={openCreate}>
-            <Plus className="mr-2 h-4 w-4" />
-            アカウントを追加
-          </Button>
+          {isSuperAdmin && (
+            <Button onClick={openCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              アカウントを追加
+            </Button>
+          )}
         </div>
       </div>
 
@@ -827,32 +834,42 @@ export default function ChannelsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Link href={`/channels/${ch.id}`}>
+                          <Button size="sm" variant="default">
+                            <Settings2 className="h-3 w-3 mr-1" />
+                            管理する
+                          </Button>
+                        </Link>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => openEdit(ch)}
                         >
                           <Pencil className="h-3 w-3 mr-1" />
-                          編集
+                          設定
                         </Button>
-                        <Button
-                          size="sm"
-                          variant={ch.is_active ? "destructive" : "outline"}
-                          onClick={() => handleToggleActive(ch)}
-                        >
-                          {ch.is_active ? "無効化" : "有効化"}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setDeleteTarget(ch);
-                            setDeleteConfirmName("");
-                          }}
-                          title="アカウントを削除"
-                        >
-                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                        </Button>
+                        {isSuperAdmin && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant={ch.is_active ? "destructive" : "outline"}
+                              onClick={() => handleToggleActive(ch)}
+                            >
+                              {ch.is_active ? "無効化" : "有効化"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setDeleteTarget(ch);
+                                setDeleteConfirmName("");
+                              }}
+                              title="アカウントを削除"
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

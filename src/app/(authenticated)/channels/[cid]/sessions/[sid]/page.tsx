@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +13,6 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 
 const STATUS_LABELS: Record<string, string> = {
   in_progress: "進行中",
@@ -29,21 +29,21 @@ const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive"> =
 export default async function SessionDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ cid: string; sid: string }>;
 }) {
-  const { id } = await params;
+  const { cid, sid } = await params;
   const supabase = await createClient();
 
   const [sessionResult, answersResult] = await Promise.all([
     supabase
       .from("sessions")
       .select("*, line_user:line_users(*)")
-      .eq("id", id)
+      .eq("id", sid)
       .single(),
     supabase
       .from("answers")
       .select("*, question:questions(question_key, content)")
-      .eq("session_id", id)
+      .eq("session_id", sid)
       .order("answered_at", { ascending: true }),
   ]);
 
@@ -57,7 +57,7 @@ export default async function SessionDetailPage({
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/sessions">
+        <Link href={`/channels/${cid}?tab=sessions`}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>

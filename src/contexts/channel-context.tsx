@@ -10,45 +10,38 @@ export interface ChannelOption {
 
 interface ChannelContextValue {
   channels: ChannelOption[];
-  selectedChannelId: string;
-  setSelectedChannelId: (id: string) => void;
+  currentUserRole: string | null;
 }
 
 const ChannelContext = createContext<ChannelContextValue>({
   channels: [],
-  selectedChannelId: "",
-  setSelectedChannelId: () => {},
+  currentUserRole: null,
 });
-
-const STORAGE_KEY = "selected_channel_id";
 
 export function ChannelProvider({ children }: { children: React.ReactNode }) {
   const [channels, setChannels] = useState<ChannelOption[]>([]);
-  const [selectedChannelId, setSelectedChannelIdState] = useState<string>("");
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
-    supabase
-      .from("line_channels")
-      .select("id, name")
-      .eq("is_active", true)
-      .order("created_at", { ascending: true })
-      .then(({ data }) => {
-        if (!data || data.length === 0) return;
-        setChannels(data);
-        const saved = localStorage.getItem(STORAGE_KEY);
-        const valid = data.some((c) => c.id === saved);
-        setSelectedChannelIdState(valid ? saved! : data[0].id);
-      });
+    Promise.all([
+      supabase
+        .from("line_channels")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("created_at", { ascending: true }),
+      supabase.auth.getUser().then(async ({ data: { user } }) => {
+        if (!user) return { data: null };
+        return supabase.from("profiles").select("role").eq("id", user.id).single();
+      }),
+    ]).then(([{ data: channelData }, { data: profileData }]) => {
+      if (channelData && channelData.length > 0) setChannels(channelData);
+      if (profileData) setCurrentUserRole(profileData.role);
+    });
   }, []);
 
-  function setSelectedChannelId(id: string) {
-    setSelectedChannelIdState(id);
-    localStorage.setItem(STORAGE_KEY, id);
-  }
-
   return (
-    <ChannelContext.Provider value={{ channels, selectedChannelId, setSelectedChannelId }}>
+    <ChannelContext.Provider value={{ channels, currentUserRole }}>
       {children}
     </ChannelContext.Provider>
   );
