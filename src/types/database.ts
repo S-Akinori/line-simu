@@ -64,6 +64,7 @@ export interface Question {
   question_key: string;
   question_type: QuestionType;
   content: string;
+  title: string | null;
   description: string | null;
   sort_order: number;
   group_name: string | null;

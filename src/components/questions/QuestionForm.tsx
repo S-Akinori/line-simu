@@ -57,6 +57,7 @@ const questionFormSchema = z.object({
     .regex(/^[a-z][a-z0-9_]*$/, "小文字英数字とアンダースコアのみ"),
   question_type: z.enum(["image_carousel", "button", "free_text"]),
   content: z.string().min(1, "質問文は必須です"),
+  title: z.string().optional(),
   description: z.string().optional(),
   group_name: z.string().optional(),
   is_active: z.boolean(),
@@ -87,6 +88,7 @@ export function QuestionForm({ channelId, question, allQuestions = [] }: Questio
       question_key: question?.question_key ?? "",
       question_type: question?.question_type ?? "button",
       content: question?.content ?? "",
+      title: question?.title ?? "",
       description: question?.description ?? "",
       group_name: question?.group_name ?? "",
       is_active: question?.is_active ?? true,
@@ -155,6 +157,7 @@ export function QuestionForm({ channelId, question, allQuestions = [] }: Questio
       question_key: values.question_key,
       question_type: values.question_type,
       content: values.content,
+      title: values.title || null,
       description: values.description || null,
       group_name: values.group_name || null,
       is_active: values.is_active,
@@ -289,6 +292,17 @@ export function QuestionForm({ channelId, question, allQuestions = [] }: Questio
                 {form.formState.errors.content.message}
               </p>
             )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="title">通知タイトル（任意）</Label>
+            <Input
+              id="title"
+              placeholder="例: 入院日数（未設定時は質問文を使用）"
+              {...form.register("title")}
+            />
+            <p className="text-xs text-muted-foreground">
+              メール通知の回答一覧で質問文の代わりに表示される短いタイトルです。
+            </p>
           </div>
           <div className="space-y-2">
             <Label>質問画像（任意）</Label>
